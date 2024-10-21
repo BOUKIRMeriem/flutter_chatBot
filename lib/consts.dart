@@ -1,1 +1,1 @@
-const OPENAI_API_KEY = "AIzaSyCyRG019XGtzclPnG64pf_IoANMntVJgTA";
+const String GEMINI_API_KEY = "AIzaSyCL3HBqJbLbGFPInb3sqBYBq-AsOwBS09E";

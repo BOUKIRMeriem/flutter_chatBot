@@ -1,7 +1,9 @@
-import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
-import 'package:mon_projet/consts.dart';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -9,108 +11,128 @@ class ChatPage extends StatefulWidget {
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
-
 class _ChatPageState extends State<ChatPage> {
-  final _openAI = OpenAI.instance.build(
-    token: OPENAI_API_KEY,
-    baseOption: HttpSetup(
-      receiveTimeout: const Duration(seconds: 5),
-    ),
-    enableLog: true,
+  final Gemini gemini = Gemini.instance;
+
+  List<ChatMessage> messages = [];
+
+  ChatUser currentUser = ChatUser(id: "0", firstName: "User");
+  ChatUser geminiUser = ChatUser(
+    id: "1",
+    firstName: "Gemini",
+    profileImage:
+        "https://seeklogo.com/images/G/google-gemini-logo-A5787B2669-seeklogo.com.png",
   );
-
-  final ChatUser _user = ChatUser(
-    id: '1',
-    firstName: 'Charles',
-    lastName: 'Leclerc',
-  );
-
-  final ChatUser _gptChatUser = ChatUser(
-    id: '2',
-    firstName: 'Chat',
-    lastName: 'GPT',
-  );
-
-  List<ChatMessage> _messages = <ChatMessage>[];
-  List<ChatUser> _typingUsers = <ChatUser>[];
-
-  @override
-  void initState() {
-    super.initState();
-    /*_messages.add(
-      ChatMessage(
-        text: 'Hey!',
-        user: _user,
-        createdAt: DateTime.now(),
-      ),
-    );*/
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFBFCFC), // App bar avec fond blanc
+      backgroundColor: Color(0xFFFBFCFC), 
       appBar: AppBar(
-        backgroundColor: Color(0xFF191970), // Added comma here
+        automaticallyImplyLeading: false, 
+        backgroundColor: Color(0xFF191970), 
         title: const Text(
-          'Chat Bot',
-          style: TextStyle(color: Colors.white),
+          "Chat Boot",
+          style: TextStyle(color: Colors.white),  
         ),
-      ),
-      body: DashChat(
-        currentUser: _user,
-        messageOptions: const MessageOptions(
-          currentUserContainerColor: Colors.black,
-          containerColor: Color.fromRGBO(
-            0,
-            166,
-            126,
-            1,
+           actions: [
+          IconButton(
+            icon: Image.asset('assets/log.png'), // Chemin de l'image log out
+            onPressed: () {
+              // Action de déconnexion
+              // Ici, vous pouvez ajouter le code pour la déconnexion ou la navigation vers la page de login
+              Navigator.pop(context); // Exemple : revenir à la page précédente
+            },
           ),
-          textColor: Colors.white,
-        ),
-        onSend: (ChatMessage m) {
-          getChatResponse(m);
-        },
-        messages: _messages,
-        typingUsers: _typingUsers,
+        ],
       ),
+      body: _buildUI(),
     );
   }
 
-  Future<void> getChatResponse(ChatMessage m) async {
-    setState(() {
-      _messages.insert(0, m);
-      _typingUsers.add(_gptChatUser);
-    });
-    List<Map<String, dynamic>> messagesHistory =
-        _messages.reversed.toList().map((m) {
-      if (m.user == _user) {
-        return Messages(role: Role.user, content: m.text).toJson();
-      } else {
-        return Messages(role: Role.assistant, content: m.text).toJson();
-      }
-    }).toList();
-    final request = ChatCompleteText(
-      messages: messagesHistory,
-      maxToken: 200,
-      model: GptTurbo0301ChatModel(),
+  Widget _buildUI() {
+    return DashChat(
+      inputOptions: InputOptions(trailing: [
+        IconButton(
+          onPressed: _sendMediaMessage,
+          icon: const Icon(
+            Icons.image,
+          ),
+        )
+      ]),
+      currentUser: currentUser,
+      onSend: _sendMessage,
+      messages: messages,
     );
-    final response = await _openAI.onChatCompletion(request: request);
-    for (var element in response!.choices) {
-      if (element.message != null) {
-        setState(() {
-          _messages.insert(
-              0,
-              ChatMessage(
-                  user: _gptChatUser,
-                  createdAt: DateTime.now(),
-                  text: element.message!.content));
-        });
-      }
-    }
+  }
+
+  void _sendMessage(ChatMessage chatMessage) {
     setState(() {
-      _typingUsers.remove(_gptChatUser);
+      messages = [chatMessage, ...messages];
     });
+    try {
+      String question = chatMessage.text;
+      List<Uint8List>? images;
+      if (chatMessage.medias?.isNotEmpty ?? false) {
+        images = [
+          File(chatMessage.medias!.first.url).readAsBytesSync(),
+        ];
+      }
+      gemini
+          .streamGenerateContent(
+        question,
+        images: images,
+      )
+          .listen((event) {
+        ChatMessage? lastMessage = messages.firstOrNull;
+        if (lastMessage != null && lastMessage.user == geminiUser) {
+          lastMessage = messages.removeAt(0);
+          String response = event.content?.parts?.fold(
+                  "", (previous, current) => "$previous ${current.text}") ??
+              "";
+          lastMessage.text += response;
+          setState(
+            () {
+              messages = [lastMessage!, ...messages];
+            },
+          );
+        } else {
+          String response = event.content?.parts?.fold(
+                  "", (previous, current) => "$previous ${current.text}") ??
+              "";
+          ChatMessage message = ChatMessage(
+            user: geminiUser,
+            createdAt: DateTime.now(),
+            text: response,
+          );
+          setState(() {
+            messages = [message, ...messages];
+          });
+        }
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void _sendMediaMessage() async {
+    ImagePicker picker = ImagePicker();
+    XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (file != null) {
+      ChatMessage chatMessage = ChatMessage(
+        user: currentUser,
+        createdAt: DateTime.now(),
+        text: "Describe this picture?",
+        medias: [
+          ChatMedia(
+            url: file.path,
+            fileName: "",
+            type: MediaType.image,
+          )
+        ],
+      );
+      _sendMessage(chatMessage);
+    }
   }
 }

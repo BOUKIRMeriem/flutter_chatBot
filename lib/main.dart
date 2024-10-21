@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:mon_projet/consts.dart';
 import 'package:mon_projet/pages/home_page.dart';
 
 void main() {
-  runApp(MyApp());
+  Gemini.init(
+    apiKey: GEMINI_API_KEY,
+  );
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {

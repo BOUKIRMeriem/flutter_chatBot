@@ -19,7 +19,7 @@ class RegisterPage extends StatelessWidget {
       return;
     }
 
-    final url = Uri.parse('http://192.168.1.107:8080/api/auth/register');
+    final url = Uri.parse('http://192.168.1.104:8080/api/auth/register');
 
     // Le body de la requête
     final Map<String, String> requestBody = {
@@ -80,15 +80,17 @@ class RegisterPage extends StatelessWidget {
     );
   }
 
+  
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Color(0xFFFBFCFC),
+    appBar: AppBar(
       backgroundColor: Color(0xFFFBFCFC),
-      appBar: AppBar(
-        backgroundColor: Color(0xFFFBFCFC),
-        elevation: 0,
-      ),
-      body: Padding(
+      elevation: 0,
+    ),
+    body: SingleChildScrollView( // Ajout du SingleChildScrollView pour gérer le défilement
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -180,6 +182,7 @@ class RegisterPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
