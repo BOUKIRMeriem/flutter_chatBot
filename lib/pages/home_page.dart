@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mon_projet/pages/register_page.dart'; // Importer la page Register
-import 'package:mon_projet/pages/login_page.dart';    // Importer la page Login
+import 'package:mon_projet/pages/register_page.dart';
+import 'package:mon_projet/pages/login_page.dart';    
 
 class HomePage extends StatelessWidget {
   @override
@@ -25,7 +25,7 @@ class HomePage extends StatelessWidget {
         children: [
           Image.asset('assets/ai_image.png'),
           Text(
-            'Welcome',
+            'Bienvenue',
             style: TextStyle(
               fontSize: 60,
               fontWeight: FontWeight.bold,
@@ -57,7 +57,7 @@ class HomePage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Sign Up',
+                     "S'inscrire",
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   Icon(
@@ -80,13 +80,13 @@ class HomePage extends StatelessWidget {
             },
             child: Text.rich(
               TextSpan(
-                text: "Already have an account? ",
+                text: "Vous avez déjà un compte ? ",
                 style: TextStyle(
                   color: Colors.black54, // Default text color
                 ),
                 children: [
                   TextSpan(
-                    text: "Login",
+                    text: "se Connecter",
                     style: TextStyle(
                       color: Color(0xFF191970), // Dark blue (Midnight Blue)
                       decoration: TextDecoration.underline,

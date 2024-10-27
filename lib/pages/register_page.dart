@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mon_projet/pages/login_page.dart';  
+import 'package:mon_projet/pages/login_page.dart';
 
 class RegisterPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
@@ -14,8 +14,10 @@ class RegisterPage extends StatelessWidget {
     final String password = _passwordController.text;
     final String confirmPassword = _confirmPasswordController.text;
 
+    // Vérification des mots de passe
     if (password != confirmPassword) {
-      _showErrorDialog(context, "Passwords do not match!");
+      _showErrorDialog(context, "Le mot de passe ne correspondent pas !");
+      _clearFields(); // Vider les champs
       return;
     }
 
@@ -36,14 +38,13 @@ class RegisterPage extends StatelessWidget {
 
       if (response.statusCode == 200) {
         // Inscription réussie : afficher un message de succès
-        final responseData = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Inscription réussie ! "),
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Redirection vers la page de login après un délai de 2 secondes
         Future.delayed(Duration(seconds: 2), () {
           Navigator.pushReplacement(
@@ -51,13 +52,20 @@ class RegisterPage extends StatelessWidget {
             MaterialPageRoute(builder: (context) => LoginPage()),
           );
         });
-      } else {
-        // Une erreur s'est produite
+      } else if (response.statusCode == 400) {
+        // Gestion des erreurs spécifiques, par exemple : utilisateur déjà existant
         final errorData = jsonDecode(response.body);
         _showErrorDialog(context, errorData['error']);
+        _clearFields(); // Vider les champs
+      } else {
+        // Autres erreurs
+        final errorData = jsonDecode(response.body);
+        _showErrorDialog(context, errorData['error']);
+        _clearFields(); // Vider les champs
       }
     } catch (e) {
-      _showErrorDialog(context, "An error occurred: $e");
+      _showErrorDialog(context, "Une erreur est survenue : $e");
+      _clearFields(); // Vider les champs
     }
   }
 
@@ -66,7 +74,7 @@ class RegisterPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Error"),
+        title: Text("Erreur"),
         content: Text(message),
         actions: <Widget>[
           TextButton(
@@ -80,109 +88,108 @@ class RegisterPage extends StatelessWidget {
     );
   }
 
-  
+  // Fonction pour vider les champs de texte
+  void _clearFields() {
+    _usernameController.clear();
+    _passwordController.clear();
+    _confirmPasswordController.clear();
+  }
+
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Color(0xFFFBFCFC),
-    appBar: AppBar(
+  Widget build(BuildContext context) {
+    return Scaffold(
       backgroundColor: Color(0xFFFBFCFC),
-      elevation: 0,
-    ),
-    body: SingleChildScrollView( // Ajout du SingleChildScrollView pour gérer le défilement
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Sign up',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF191970),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              "Create an account, It's free",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            SizedBox(height: 32),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: _confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            SizedBox(height: 32),
-            Container(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF191970),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                onPressed: () {
-                  _registerUser(context);
-                },
-                child: Text(
-                  'Sign up',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+      appBar: AppBar(
+        backgroundColor: Color(0xFFFBFCFC),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView( // Ajout du SingleChildScrollView pour gérer le défilement
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "S'inscrire",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF191970),
                 ),
               ),
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Already have an account? "),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginPage()),
-                    );
-                  },
-                  child: Text(
-                    'Login',
-                    style: TextStyle(
-                      color: Color(0xFF191970),
-                      fontWeight: FontWeight.bold,
+              SizedBox(height: 32),
+
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: "Nom d'utilisateur",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Confirmer le mot de passe',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 32),
+              Container(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF191970),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
+                  onPressed: () {
+                    _registerUser(context);
+                  },
+                  child: Text(
+                    "S'inscrire",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
-              ],
-            ),
-          ],
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Vous avez déjà un compte ?"),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginPage()),
+                      );
+                    },
+                    child: Text(
+                      'se connecter',
+                      style: TextStyle(
+                        color: Color(0xFF191970),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

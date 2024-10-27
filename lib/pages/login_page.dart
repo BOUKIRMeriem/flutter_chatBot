@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mon_projet/pages/register_page.dart';
-import 'package:mon_projet/pages/chat_page.dart'; // Assurez-vous d'importer votre page de chat
+import 'package:mon_projet/pages/chat_page.dart'; // Import de la page de chat
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _usernameController = TextEditingController();
@@ -14,8 +14,6 @@ class LoginPage extends StatelessWidget {
     final String password = _passwordController.text;
 
     final url = Uri.parse('http://192.168.1.104:8080/api/auth/login');
-
-    // Le body de la requête
     final Map<String, String> requestBody = {
       'username': username,
       'password': password,
@@ -28,50 +26,35 @@ class LoginPage extends StatelessWidget {
         body: jsonEncode(requestBody),
       );
 
-      if (response.statusCode == 200) {
-        // Connexion réussie
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final responseData = jsonDecode(response.body);
         final token = responseData['token'];
+        final userId = responseData['userId'];
 
-        // Vous pouvez stocker le token si nécessaire, par exemple dans SharedPreferences
+        // Save token and userId for later use (e.g., shared preferences)
 
-        // Afficher un message de succès
-        _showSuccessDialog(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Connexion réussie!"),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
 
-        // Rediriger vers la page de chat après un court délai
         Future.delayed(Duration(seconds: 2), () {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ChatPage()),
+            MaterialPageRoute(builder: (context) => ChatPage(userId: userId)),
           );
         });
       } else {
-        // Une erreur s'est produite
-        final errorData = jsonDecode(response.body);
-        _showErrorDialog(context, errorData['error'] ?? "Invalid credentials");
+        _showErrorDialog(context, "Erreur de connexion : ${response.body}");
       }
     } catch (e) {
-      _showErrorDialog(context, "An error occurred: $e");
+      _showErrorDialog(context, "Une erreur s'est produite : $e");
+      _usernameController.clear();
+      _passwordController.clear();
     }
-  }
-
-  // Fonction pour afficher une boîte de dialogue de réussite
-  void _showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Success"),
-        content: Text("Login successful!"),
-        actions: <Widget>[
-          TextButton(
-            child: Text("OK"),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   // Fonction pour afficher une boîte de dialogue d'erreur
@@ -79,7 +62,7 @@ class LoginPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text("Error"),
+        title: Text("Erreur"),
         content: Text(message),
         actions: <Widget>[
           TextButton(
@@ -96,10 +79,10 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFBFCFC), // Fond blanc
+      backgroundColor: Color(0xFFFBFCFC),
       appBar: AppBar(
-        backgroundColor: Color(0xFFFBFCFC), // App bar avec fond blanc
-        elevation: 0, // Retirer l'ombre
+        backgroundColor: Color(0xFFFBFCFC),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -107,42 +90,30 @@ class LoginPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Titre "Login"
               Text(
-                'Login',
+                'Se connecter',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF191970),
                 ),
               ),
-              SizedBox(height: 8),
-              // Sous-titre
-              Text(
-                "Login to your account",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
               SizedBox(height: 32),
-              // Champ "Username"
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: "Nom d'utilisateur",
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 16),
-              // Champ "Password"
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'Mot de passe',
                   border: OutlineInputBorder(),
                 ),
-                obscureText: true, // Masquer le texte du mot de passe
+                obscureText: true,
               ),
               SizedBox(height: 16),
               Container(
@@ -150,16 +121,16 @@ class LoginPage extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF191970), // Couleur bleue du bouton
+                    backgroundColor: Color(0xFF191970),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30), // Bord arrondi
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
                   onPressed: () {
-                    _loginUser(context); // Appel à la fonction de connexion
+                    _loginUser(context);
                   },
                   child: Text(
-                    'Login',
+                    'Se connecter',
                     style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
@@ -168,17 +139,16 @@ class LoginPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account? "),
+                  Text("Vous n'avez pas de compte ? "),
                   GestureDetector(
                     onTap: () {
-                      // Rediriger vers la page d'inscription
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => RegisterPage()),
                       );
                     },
                     child: Text(
-                      'Sign up',
+                      "S'inscrire",
                       style: TextStyle(
                         color: Color(0xFF191970),
                         fontWeight: FontWeight.bold,
@@ -187,8 +157,7 @@ class LoginPage extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: 40), // Espacement entre le texte et l'image
-              // Image sous le texte
+              SizedBox(height: 40),
               Image.asset('assets/login.png'),
             ],
           ),
